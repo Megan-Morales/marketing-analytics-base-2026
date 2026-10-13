@@ -127,7 +127,6 @@ train, test = entrenar_t_learner(df, test_size=0.30, seed=42)
 
 def curva_qini(test_df, score_col, steps=40):
 
-    # Ordenar clientes por uplift estimado
     orden = test_df.sort_values(
         score_col,
         ascending=False
@@ -139,7 +138,6 @@ def curva_qini(test_df, score_col, steps=40):
 
     respondio = orden["responded_60d"].values
 
-    # Respuestas acumuladas
     acumulado_tratados = np.cumsum(
         np.where(es_tratado, respondio, 0)
     )
@@ -155,29 +153,28 @@ def curva_qini(test_df, score_col, steps=40):
 
     xs, ys = [0.0], [0.0]
 
-    for i in np.linspace(1, n, steps).astype(int):
+    # Evaluar desde el 2.5% hasta el 100%
+    puntos = np.linspace(
+        max(1, int(n * 0.025)),
+        n,
+        steps
+    ).astype(int)
+
+    for i in puntos:
 
         nt = n_tratados[i - 1]
         nc = n_control[i - 1]
 
-        tasa_t = (
-            acumulado_tratados[i - 1] / nt
-            if nt > 0 else 0
-        )
+        if nt == 0 or nc == 0:
+            continue
 
-        tasa_c = (
-            acumulado_control[i - 1] / nc
-            if nc > 0 else 0
-        )
+        tasa_t = acumulado_tratados[i - 1] / nt
+        tasa_c = acumulado_control[i - 1] / nc
 
         xs.append(i / n)
-
-        ys.append(
-            (tasa_t - tasa_c) * n
-        )
+        ys.append((tasa_t - tasa_c) * i)
 
     return np.array(xs), np.array(ys)
-
 
 def coeficiente_qini(xs, ys, n):
 
