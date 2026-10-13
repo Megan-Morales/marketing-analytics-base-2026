@@ -176,15 +176,18 @@ def curva_qini(test_df, score_col, steps=40):
 
     return np.array(xs), np.array(ys)
     
-    def coeficiente_qini(xs, ys, n):
+def coeficiente_qini(xs, ys, n):
 
+    
     area_modelo = np.trapezoid(ys, xs)
 
+    
     area_azar = np.trapezoid(
         np.linspace(0, ys[-1], len(xs)),
         xs
     )
 
+    
     return (area_modelo - area_azar) / n
 
 
