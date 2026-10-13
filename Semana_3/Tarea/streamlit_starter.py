@@ -32,40 +32,54 @@ def load_data():
 
 @st.cache_data
 def entrenar_t_learner(df: pd.DataFrame, test_size: float, seed: int):
-    train, test = train_test_split(df, test_size=test_size, random_state=seed, stratify=df["treatment_group"])
 
-    # TODO: entrenen el T-learner (dos modelos, igual que en el notebook)
+    train, test = train_test_split(
+        df,
+        test_size=test_size,
+        random_state=seed,
+        stratify=df["treatment_group"]
+    )
+
+    # Separar clientes tratados y de control
     train_t = train[train["treatment_group"] == "treatment"]
     train_c = train[train["treatment_group"] == "control"]
+
+    # Modelo Random Forest para tratados
     modelo_tratado = RandomForestClassifier(
-    n_estimators=100,
-    max_depth=5,
-    min_samples_leaf=20,
-    random_state=42,
-    n_jobs=-1
-).fit(
-    train_t[FEATURES],
-    train_t["responded_60d"]
-)
+        n_estimators=100,
+        max_depth=5,
+        min_samples_leaf=20,
+        random_state=42,
+        n_jobs=-1
+    ).fit(
+        train_t[FEATURES],
+        train_t["responded_60d"]
+    )
 
-modelo_control = RandomForestClassifier(
-    n_estimators=100,
-    max_depth=5,
-    min_samples_leaf=20,
-    random_state=42,
-    n_jobs=-1
-).fit(
-    train_c[FEATURES],
-    train_c["responded_60d"]
-)
+    # Modelo Random Forest para control
+    modelo_control = RandomForestClassifier(
+        n_estimators=100,
+        max_depth=5,
+        min_samples_leaf=20,
+        random_state=42,
+        n_jobs=-1
+    ).fit(
+        train_c[FEATURES],
+        train_c["responded_60d"]
+    )
 
+    # Calcular uplift estimado
     test = test.copy()
     X_test = test[FEATURES]
+
     test["p_tratado"] = modelo_tratado.predict_proba(X_test)[:, 1]
     test["p_control"] = modelo_control.predict_proba(X_test)[:, 1]
-    test["uplift_estimado"] = test["p_tratado"] - test["p_control"]
-    return train, test
 
+    test["uplift_estimado"] = (
+        test["p_tratado"] - test["p_control"]
+    )
+
+    return train, test
 
 def valor_de_la_politica(test_df, seleccionados):
     sel = test_df.loc[seleccionados]
