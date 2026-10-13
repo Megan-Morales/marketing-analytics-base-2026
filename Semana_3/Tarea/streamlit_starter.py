@@ -146,37 +146,37 @@ def curva_qini(test_df, score_col, steps=40):
         np.where(~es_tratado, respondio, 0)
     )
 
-    n_tratados = np.cumsum(es_tratado)
-    n_control = np.cumsum(~es_tratado)
+    n_tratados_acum = np.cumsum(es_tratado)
+    n_control_acum = np.cumsum(~es_tratado)
 
     n = len(orden)
 
     xs, ys = [0.0], [0.0]
 
-    # Evaluar desde el 2.5% hasta el 100%
-    puntos = np.linspace(
-        max(1, int(n * 0.025)),
-        n,
-        steps
-    ).astype(int)
+    for i in np.linspace(1, n, steps).astype(int):
 
-    for i in puntos:
+        nt = n_tratados_acum[i - 1]
+        nc = n_control_acum[i - 1]
 
-        nt = n_tratados[i - 1]
-        nc = n_control[i - 1]
+        tasa_t = (
+            acumulado_tratados[i - 1] / nt
+            if nt > 0 else 0
+        )
 
-        if nt == 0 or nc == 0:
-            continue
-
-        tasa_t = acumulado_tratados[i - 1] / nt
-        tasa_c = acumulado_control[i - 1] / nc
+        tasa_c = (
+            acumulado_control[i - 1] / nc
+            if nc > 0 else 0
+        )
 
         xs.append(i / n)
-        ys.append((tasa_t - tasa_c) * i)
+
+        ys.append(
+            (tasa_t - tasa_c) * n
+        )
 
     return np.array(xs), np.array(ys)
-
-def coeficiente_qini(xs, ys, n):
+    
+    def coeficiente_qini(xs, ys, n):
 
     area_modelo = np.trapezoid(ys, xs)
 
